@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "idp2023-example"
+version = "0.1.0"
+description = "A project template for Industrial Project course's 2023 implementation."
+authors = ["Joni Hyttinen <joni.hyttinen@uef.fi>"]
+readme = "README.md"
+packages = [{include = "idp2023_example"}]
+repository = "https://github.com/hyjo-github/idp2023"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+pyside6 = "^6.5.2"
+numpy = "^1.25.2"
+
+[tool.poetry.scripts]
+signal_app = "idp2023_example.signal_app_main_window:run"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

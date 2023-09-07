@@ -1,0 +1,20 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: IDP2023 project template
+Upstream-Contact: Joni Hyttinen <joni.hyttinen@uef.fi>
+Source: https://github.com/hyjo-github/idp2023
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...
+
+# These files are automatically generated and are worthless for reuse.
+# The reuse documentation suggests CC0 for this use case.
+Files: .idea/* poetry.lock *.pyc
+Copyright: 2023 Joni Hyttinen <joni.hyttinen@uef.fi>
+License: CC0-1.0
+
+Files: pyproject.toml
+Copyright: 2023 Joni Hyttinen <joni.hyttinen@uef.fi>
+License: CC0-1.0
