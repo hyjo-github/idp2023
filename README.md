@@ -30,21 +30,25 @@ Another option is to use the system Python.
 
   ``conda create -n idp2023 python=3.11``
 
+- Activate the new virtual environment
+
+  ``conda activate idp2023``
+
 - Install **PySide6**
 
-  ``conda install -n idp2023 pyside6 -c conda-forge``
+  ``pip install pyside6``
+
+  > We specifically avoid using Anaconda's repositories here. PySide6 is 
+  > available in **conda-forge**, but their build does not include QtCharts,
+  > which is needed for this application.
 
 - Install the other dependencies
 
-  ``conda install -n idp2023 numpy``
+  ``conda install numpy``
 
 - Updating the environment can be done with
 
-  ``conda update -n idp2023 --all``
-
-  > Note, however, that the update will replace some packages installed from
-  > **conda-forge**. This should be fine as long as `conda` is not attempting
-  > to remove the **pyside6**-package.
+  ``conda update --all``
 
 - Download or `git clone` the project on your system.
 - Open it the development environment of your choice.
@@ -88,6 +92,20 @@ packaging and dependency management tool.
 
 - Open the project in your chosen development environment and use Poetry integration,
   if such is available, to manage the virtual environment.
+
+## Running the application
+If **poetry** was used to create the virtual environment, the application can
+be run with command
+
+``poetry run signal_app``
+
+from the project directory.
+
+Other solutions, like **Anaconda**, should be able to run the program in the
+designated virtual environment simply by running
+
+    conda activate idp2023
+    python -m idp2023_example.signal_app_main_window
 
 ## File tree
 - idp2023_example
