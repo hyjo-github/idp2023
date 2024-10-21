@@ -6,14 +6,18 @@
 # https://doc.qt.io/qtforpython-6/tutorials/expenses/expenses.html
 
 import sys
+from pathlib import Path
 
 from PySide6.QtGui import QCloseEvent
-from PySide6.QtWidgets import QMainWindow, QApplication
+from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow
 
 from idp2023_example.signal_app_widget import SignalAppWidget
 
 
 class SignalAppMainWindow(QMainWindow):
+    last_dir = Path.home()  # Keep track of the last opened directory
+    selected_filter = None
+
     def __init__(self):
         super().__init__()
 
@@ -32,7 +36,16 @@ class SignalAppMainWindow(QMainWindow):
         self.signal_app_widget.stop_signal_analyser()
 
     def file_open_action(self):
-        pass
+        signal_path, self.selected_filter = QFileDialog.getOpenFileName(
+            self,
+            self.tr("Open Industrial Project signal file"),
+            str(self.last_dir),  # ok, Qt seems to like path strings
+            self.tr("Signal files (*.csv)"),
+            self.selected_filter,
+        )
+        signal_path = Path(signal_path)  # but I like pathlib.Path
+        self.last_dir = signal_path.parent
+        self.signal_app_widget.set_signal_path(signal_path)
 
 
 def run():

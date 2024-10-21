@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import time
+from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import Signal
@@ -17,6 +18,7 @@ class SignalAnalyzer:
     """
 
     def __init__(self):
+        self.signal_path = None
         self.running = False
         self.window_size = 1000
         self.x = 0
@@ -44,6 +46,7 @@ class SignalAnalyzer:
 
     def start(
         self,
+        signal_path: Path,
         set_chart_axis_y: Signal | None = None,
         update_chart: Signal | None = None,
         progress_callback: Signal | None = None,
@@ -51,10 +54,13 @@ class SignalAnalyzer:
         """
         Starts the SignalAnalyzer main loop.
 
+        :param signal_path: the path to the signal data file.
         :param set_chart_axis_y: Callback function to update chart y-axis.
         :param update_chart: Callback function to update a chart.
         :param progress_callback: Callback function to update progress meters.
         """
+
+        self.signal_path = signal_path
         self._start(set_chart_axis_y)
 
         while self.running:

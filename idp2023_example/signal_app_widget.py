@@ -2,6 +2,7 @@
 # SPDX-FileContributor: 2019 Martin Fitzpatrick
 #
 # SPDX-License-Identifier: MIT
+from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import Qt, QThreadPool, Signal, Slot
@@ -13,6 +14,9 @@ from idp2023_example.worker import Worker
 
 
 class SignalAppWidget(QWidget):
+    # File path for the signal data
+    signal_path: Path | None = None
+
     # Signals for SignalAnalyzer callbacks
     chart_set_axis_y = Signal(float, float)
     chart_update_data = Signal(np.ndarray, np.ndarray)
@@ -48,17 +52,21 @@ class SignalAppWidget(QWidget):
         self.threadpool = QThreadPool()
         self.signal_analyzer = SignalAnalyzer()
 
+    def set_signal_path(self, signal_path: Path):
+        self.signal_path = signal_path
+
     @Slot()
     def start_signal_analyser(self):
         """
-        Starts a signal analyzer in a worker thread and connects the appropriate
-        signals.
+        Starts a signal analyzer in a worker thread, passes the signal file path
+        and connects the appropriate signals.
         """
 
         # Create an instance of Worker that will run the signal analyzer's main
         # loop when the thread is started. Pass the signal callbacks.
         worker = Worker(
             self.signal_analyzer.start,
+            signal_path=self.signal_path,
             set_chart_axis_y=self.chart_set_axis_y,
             update_chart=self.chart_update_data,
         )
