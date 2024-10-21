@@ -60,6 +60,7 @@ class SignalAnalyzer:
         while self.running:
             self._generate_data_array()
 
+            # This signal will now block the thread until chart update is finished
             if update_chart:
                 update_chart.emit(self.x_array, self.y_array)
 

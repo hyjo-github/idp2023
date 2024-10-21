@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import numpy as np
-from PySide6.QtCore import QThreadPool, Signal, Slot
+from PySide6.QtCore import Qt, QThreadPool, Signal, Slot
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
 from idp2023_example.signal_analyzer import SignalAnalyzer
@@ -24,8 +24,11 @@ class SignalAppWidget(QWidget):
         self.signal_window_chart = SignalWindowChartWidget()
 
         # Connect the chart to the chart handling signals.
-        self.chart_set_axis_y.connect(self.signal_window_chart.set_axis_y)
-        self.chart_update_data.connect(self.signal_window_chart.replace_array)
+        # Make these blocking queued connections. Signal analyzer thread will stop and wait until the emitted signal
+        # finishes. This prevents problems arising from signal analyzer analyzing faster than the chart can show the
+        # signal.
+        self.chart_set_axis_y.connect(self.signal_window_chart.set_axis_y, type=Qt.BlockingQueuedConnection)
+        self.chart_update_data.connect(self.signal_window_chart.replace_array, type=Qt.BlockingQueuedConnection)
 
         # Add buttons to start and stop the signal analyzer.
         self.start_button = QPushButton("Start")
