@@ -24,8 +24,8 @@ class SignalWindowChartWidget(QWidget):
         self.axis_y: QValueAxis | None = None
 
         self.chart = QChart()
-        #self.chart.setAnimationOptions(QChart.AllAnimations)
-        #self.chart.setAnimationDuration(50)
+        # self.chart.setAnimationOptions(QChart.AllAnimations)
+        # self.chart.setAnimationDuration(50)
         self.add_series("Amplitude")
 
         self.chart_view = QChartView(self.chart)
