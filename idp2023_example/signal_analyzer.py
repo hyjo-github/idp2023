@@ -21,11 +21,12 @@ class SignalAnalyzer:
     def __init__(self):
         self.signal_path = None
         self.running = False
-        self.window_size = 50000
+        self.window_size = 600 * 50000  # Let's take 10 minutes of the signal
+        self.chunk_size = 500000  # ten second at a time
         self.x = 0
         self.x_array = np.zeros((self.window_size,))
         self.y_array = np.zeros_like(self.x_array) * np.nan
-        self.y_max = -np.inf  # Use ridicilous values to force y-scale change
+        self.y_max = -np.inf  # Use ridiculous values to force y-scale change
         self.y_min = np.inf
 
     def _read_signal(self, chunk_size: int = 1) -> Iterator[np.ndarray]:
@@ -96,7 +97,10 @@ class SignalAnalyzer:
         while self.running:
             self.x = -self.window_size
 
-            for chunk in self._read_signal(self.window_size // 10):
+            for chunk in self._read_signal(self.chunk_size):
+                # Record iteration start time
+                start_time = time.time()
+
                 # Break out from the for-loop if `self.running` has changed
                 if not self.running:
                     break
@@ -111,18 +115,26 @@ class SignalAnalyzer:
                 self.y_min = y_min if (y_min := np.nanmin(self.y_array)) < self.y_min else self.y_min
                 self.y_max = y_max if (y_max := np.nanmax(self.y_array)) > self.y_max else self.y_max
 
+                # Uh oh, we quickly notice that plotting this many points is downright unfeasible. Let's reduce the
+                # load for visualization by selecting only every 100th value in the arrays.
+                vis_x = self.x_array[::100].copy()  # these array slice views seem to go missing if not copied
+                vis_y = self.y_array[::100].copy()
+
                 # This signal will now block the thread until chart update is finished
                 if set_chart_axis_y:
                     set_chart_axis_y.emit(self.y_min, self.y_max)
 
                 # This signal will now block the thread until chart update is finished
                 if update_chart:
-                    update_chart.emit(self.x_array, self.y_array)
+                    update_chart.emit(vis_x, vis_y)
 
                 if progress_callback:
                     # This loop has no meaningful progress.
                     # Just report the current left-most x-coordinate.
                     progress_callback.emit(self.x)
+
+                end_time = time.time()
+                print(f"Finished iteration in {(end_time - start_time) * 1000:.2f} ms")
 
             # Stop while-loop when the file ends
             self.running = False

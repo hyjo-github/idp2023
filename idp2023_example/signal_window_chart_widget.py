@@ -7,6 +7,8 @@
 # Based on Qt for Python 6 data visualization tutorial [1]
 #
 # [1] https://doc.qt.io/qtforpython-6/tutorials/datavisualize/plot_datapoints.html
+import time
+
 import numpy as np
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
 from PySide6.QtCore import Qt, Slot
@@ -65,7 +67,10 @@ class SignalWindowChartWidget(QWidget):
 
     @Slot(np.ndarray, np.ndarray)
     def replace_array(self, x: np.ndarray, y: np.ndarray):
+        start_time = time.time()
         self.series.replaceNp(x, y)
 
         self.axis_x.setMin(x.min())
         self.axis_x.setMax(x.max())
+        end_time = time.time()
+        print(f"Finished updating chart in {(end_time - start_time) * 1000:.2f} ms")
