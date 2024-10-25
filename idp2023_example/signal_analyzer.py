@@ -50,18 +50,29 @@ class SignalAnalyzer:
             print(f"""signal path "{self.signal_path}" is not a valid file.""")
             return
 
-        with self.signal_path.open("r") as signal_file:
-            reader = csv.reader(signal_file)
-            # skip column headers ("adc1", "adc2")
-            next(reader)
-            data = np.zeros((chunk_size, 2))
-            i = 0
-            for i, row in enumerate(reader):
-                data[i % chunk_size] = np.array(row, np.uint16)
-                if i > 0 and i % chunk_size == 0:
-                    yield data
-            if i % chunk_size != 0:
-                yield data[: i % chunk_size]
+        match self.signal_path.suffix.lower():
+            case ".csv":
+                with self.signal_path.open("r") as signal_file:
+                    reader = csv.reader(signal_file)
+                    # skip column headers ("adc1", "adc2")
+                    next(reader)
+                    data = np.zeros((chunk_size, 2))
+                    i = 0
+                    for i, row in enumerate(reader):
+                        data[i % chunk_size] = np.array(row, np.uint16)
+                        if i > 0 and i % chunk_size == 0:
+                            yield data
+                    if i % chunk_size != 0:
+                        yield data[: i % chunk_size]
+            case ".npy":
+                # Open once to get array length.
+                # The array in the file is a flat, single-dimensional array of n elements.
+                signal = np.memmap(self.signal_path, dtype=np.int16, order='C')
+                # Reopen the file with correct (n // 2, 2) shape.
+                signal = np.memmap(self.signal_path, dtype=np.int16, shape=(signal.shape[0] // 2, 2), order='C')
+                # Throw out chunks of requested size
+                for chunk_start in range(0, signal.shape[0], chunk_size):
+                    yield signal[chunk_start : chunk_start + chunk_size, :]
 
     def _start(self, set_axis_y=None):
         """
@@ -109,7 +120,7 @@ class SignalAnalyzer:
                 if not self.running:
                     break
 
-                chunk_size = chunk.shape[0]  # At the end of the file, we don't know how large this is
+                chunk_size = chunk.shape[0]  # No guarantee that `chunk` is always of the requested size
                 self.x_array = np.linspace(self.x, self.x + self.window_size - 1, self.window_size) / 50000
                 self.y_array = np.roll(self.y_array, -chunk_size)  # roll `self.y_array` back by `chunk_size`
                 self.y_array[-chunk_size:] = chunk[:, 1]  # replace the last `chunk_size` entries with `chunk`
