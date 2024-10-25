@@ -18,6 +18,7 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QSizePolicy
 
 logger = logging.getLogger(__name__)
 
+
 class SignalWindowChartWidget(QWidget):
     def __init__(self):
         super().__init__()

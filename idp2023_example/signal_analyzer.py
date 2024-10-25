@@ -12,6 +12,7 @@ from PySide6.QtCore import Signal
 
 logger = logging.getLogger(__name__)
 
+
 class SignalAnalyzer:
     """
     A "signal analyzer" that just generates an array of cosine function values.
@@ -68,9 +69,9 @@ class SignalAnalyzer:
             case ".npy":
                 # Open once to get array length.
                 # The array in the file is a flat, single-dimensional array of n elements.
-                signal = np.memmap(self.signal_path, dtype=np.int16, order='C')
+                signal = np.memmap(self.signal_path, dtype=np.int16, order="C")
                 # Reopen the file with correct (n // 2, 2) shape.
-                signal = np.memmap(self.signal_path, dtype=np.int16, shape=(signal.shape[0] // 2, 2), order='C')
+                signal = np.memmap(self.signal_path, dtype=np.int16, shape=(signal.shape[0] // 2, 2), order="C")
                 self.max_x = signal.shape[0]
                 # Throw out chunks of requested size
                 for chunk_start in range(0, self.max_x, chunk_size):
@@ -91,9 +92,9 @@ class SignalAnalyzer:
             case ".npy":
                 # Open once to get array length.
                 # The array in the file is a flat, single-dimensional array of n elements.
-                signal = np.memmap(self.signal_path, dtype=np.int16, order='C')
+                signal = np.memmap(self.signal_path, dtype=np.int16, order="C")
                 # Reopen the file with correct (n // 2, 2) shape.
-                signal = np.memmap(self.signal_path, dtype=np.int16, shape=(signal.shape[0] // 2, 2), order='C')
+                signal = np.memmap(self.signal_path, dtype=np.int16, shape=(signal.shape[0] // 2, 2), order="C")
 
                 # Update maximum x value
                 self.max_x = signal.shape[0]
@@ -105,7 +106,7 @@ class SignalAnalyzer:
                     # The signal array has less data than requested.
                     # Return an array of requested size with all data that is still available, rest of it are NaN.
                     y_array = np.ones((end_x - start_x, 2)) * np.nan
-                    y_array[:self.max_x - start_x] = signal[start_x:, :]
+                    y_array[: self.max_x - start_x] = signal[start_x:, :]
                     return x_array, y_array
                 else:
                     # The request is completely out of bounds
@@ -200,13 +201,13 @@ class SignalAnalyzer:
             self.running = False
 
     def load_window(
-            self,
-            start_x: int,
-            end_x: int,
-            signal_path: Path,
-            set_chart_axis_y: Signal | None = None,
-            update_chart: Signal | None = None,
-            progress_callback: Signal | None = None,
+        self,
+        start_x: int,
+        end_x: int,
+        signal_path: Path,
+        set_chart_axis_y: Signal | None = None,
+        update_chart: Signal | None = None,
+        progress_callback: Signal | None = None,
     ):
         """Loads a signal window.
         :param start_x: the start of the window
@@ -221,7 +222,7 @@ class SignalAnalyzer:
 
         self.x_array, self.y_array = self._read_signal_at(start_x, end_x)
         self.x_array = self.x_array / 50000
-        self.y_array = self.y_array[:,1]
+        self.y_array = self.y_array[:, 1]
 
         # Update y-axis min/max if need be:
         self.y_min = y_min if (y_min := np.nanmin(self.y_array)) < self.y_min else self.y_min
@@ -237,33 +238,39 @@ class SignalAnalyzer:
             update_chart.emit(vis_x, vis_y)
 
     def current_window(
-            self,
-            signal_path: Path,
-            set_chart_axis_y: Signal | None = None,
-            update_chart: Signal | None = None,
-            progress_callback: Signal | None = None,
+        self,
+        signal_path: Path,
+        set_chart_axis_y: Signal | None = None,
+        update_chart: Signal | None = None,
+        progress_callback: Signal | None = None,
     ):
-        self.load_window(self.x, self.x + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback)
+        self.load_window(
+            self.x, self.x + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback
+        )
 
     def previous_window(
-            self,
-            signal_path: Path,
-            set_chart_axis_y: Signal | None = None,
-            update_chart: Signal | None = None,
-            progress_callback: Signal | None = None,
+        self,
+        signal_path: Path,
+        set_chart_axis_y: Signal | None = None,
+        update_chart: Signal | None = None,
+        progress_callback: Signal | None = None,
     ):
         self.x = self.x - self.window_size if self.x > self.window_size else 0
-        self.load_window(self.x, self.x + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback)
+        self.load_window(
+            self.x, self.x + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback
+        )
 
     def next_window(
-            self,
-            signal_path: Path,
-            set_chart_axis_y: Signal | None = None,
-            update_chart: Signal | None = None,
-            progress_callback: Signal | None = None,
+        self,
+        signal_path: Path,
+        set_chart_axis_y: Signal | None = None,
+        update_chart: Signal | None = None,
+        progress_callback: Signal | None = None,
     ):
         self.x = self.x + self.window_size if self.max_x > self.x + self.window_size else self.x
-        self.load_window(self.x, self.x  + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback)
+        self.load_window(
+            self.x, self.x + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback
+        )
 
     def has_previous_window(self):
         return self.x > 0

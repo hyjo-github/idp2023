@@ -8,22 +8,22 @@ from PySide6.QtCore import Signal
 class SignalConverter:
     """Convert a CSV-signal file into a binary data file.
 
-       This SignalConverter is intended to be run as a thread within an instance of the `Worker`-class.
-       Usage example:
-            # Get a thread pool
-            threadpool = QThreadPool.globalInstance()
+    This SignalConverter is intended to be run as a thread within an instance of the `Worker`-class.
+    Usage example:
+         # Get a thread pool
+         threadpool = QThreadPool.globalInstance()
 
-            # Create a SignalConverter instance
-            converter = SignalConverter()
+         # Create a SignalConverter instance
+         converter = SignalConverter()
 
-            # Prepare a Worker instance with `start`-method as the thread entry point
-            worker = Worker(converter.start, source_signal_path=self.signal_path, target_signal_path=signal_path)
+         # Prepare a Worker instance with `start`-method as the thread entry point
+         worker = Worker(converter.start, source_signal_path=self.signal_path, target_signal_path=signal_path)
 
-            # Connect worker's progress signal into a progress bar or dialog
-            worker.signals.progress.connect(progress.setValue)
+         # Connect worker's progress signal into a progress bar or dialog
+         worker.signals.progress.connect(progress.setValue)
 
-            # Start the thread
-            threadpool.start(worker)
+         # Start the thread
+         threadpool.start(worker)
     """
 
     # Flag to indicate the conversion process should be cancelled.
@@ -32,7 +32,9 @@ class SignalConverter:
     def cancel(self):
         self.cancelled = True
 
-    def start(self, source_signal_path: Path, target_signal_path: Path, progress_callback: Signal | None = None) -> bool:
+    def start(
+        self, source_signal_path: Path, target_signal_path: Path, progress_callback: Signal | None = None
+    ) -> bool:
         self.cancelled = False
 
         # Make sure the progress is at 0 %
@@ -58,7 +60,7 @@ class SignalConverter:
         # array layouts: C uses row-major and Fortran column-major layouts (see f.ex. Wikipedia article on the topic
         # https://en.wikipedia.org/wiki/Row-_and_column-major_order).
         # NOTE: the binary file will not contain dtype, shape, or order information. They must be supplied manually.
-        data = np.memmap(target_signal_path, dtype=np.int16, mode='w+', offset=0, shape=(row_count, 2), order='C')
+        data = np.memmap(target_signal_path, dtype=np.int16, mode="w+", offset=0, shape=(row_count, 2), order="C")
 
         # Read the CSV-file row-by-row writing it into the binary data file. This approach is slow, but it allows full
         # control of the reading process - every 50000 points or 1 second of data, the progress bar is updated.

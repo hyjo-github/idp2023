@@ -60,7 +60,7 @@ class SignalAppWidget(QWidget):
 
     def set_signal_path(self, signal_path: Path):
         self.signal_path = signal_path
-        if self.signal_path and self.signal_path.suffix == '.npy':
+        if self.signal_path and self.signal_path.suffix == ".npy":
             self.previous_window_button.setEnabled(True)
             self.next_window_button.setEnabled(True)
 

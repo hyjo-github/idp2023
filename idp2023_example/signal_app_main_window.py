@@ -20,6 +20,7 @@ from idp2023_example.worker import Worker
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
 class SignalAppMainWindow(QMainWindow):
     signal_path: Path | None = None
     converted_signal_path: Path | None = None
@@ -94,14 +95,15 @@ class SignalAppMainWindow(QMainWindow):
         # Prepare a signal converter thread. The thread emit progress signals to update the progress dialog.
         # Start the thread after everything has been set up.
         converter = SignalConverter()
-        worker = Worker(converter.start, source_signal_path=self.signal_path, target_signal_path=self.converted_signal_path)
+        worker = Worker(
+            converter.start, source_signal_path=self.signal_path, target_signal_path=self.converted_signal_path
+        )
         worker.signals.progress.connect(progress.setValue)
         worker.signals.result.connect(self._converter_finished)
         progress.canceled.connect(converter.cancel)
         progress.setValue(0)
         threadpool.start(worker)
         logger.debug("File->Convert: conversion process launched")
-
 
     def _converter_finished(self, finished_successfully: bool):
         if finished_successfully:
