@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import Qt, QThreadPool, Signal, Slot
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton
+from PySide6.QtWidgets import QWidget, QPushButton, QGridLayout
 
 from idp2023_example.signal_analyzer import SignalAnalyzer
 from idp2023_example.signal_window_chart_widget import SignalWindowChartWidget
@@ -37,23 +37,37 @@ class SignalAppWidget(QWidget):
         # Add buttons to start and stop the signal analyzer.
         self.start_button = QPushButton("Start")
         self.stop_button = QPushButton("Stop")
+        self.previous_window_button = QPushButton("Previous window")
+        self.next_window_button = QPushButton("Next window")
 
         # Connect the buttons' pressed-signal to the appropriate methods
         self.start_button.pressed.connect(self.start_signal_analyser)
         self.stop_button.pressed.connect(self.stop_signal_analyser)
+        self.previous_window_button.pressed.connect(self.previous_window_signal_analyzer)
+        self.next_window_button.pressed.connect(self.next_window_signal_analyzer)
 
         # Create a simple layout for the widgets
-        self.layout = QVBoxLayout(self)
-        self.layout.addWidget(self.start_button)
-        self.layout.addWidget(self.stop_button)
-        self.layout.addWidget(self.signal_window_chart)
+        self.layout = QGridLayout(self)
+        self.layout.addWidget(self.start_button, 0, 0)
+        self.layout.addWidget(self.stop_button, 0, 1)
+        self.layout.addWidget(self.previous_window_button, 1, 0)
+        self.layout.addWidget(self.next_window_button, 1, 1)
+        self.layout.addWidget(self.signal_window_chart, 2, 0, 1, 2)
 
         # Prepare a thread pool and an instance of the signal analyzer.
-        self.threadpool = QThreadPool()
+        self.threadpool = QThreadPool.globalInstance()
         self.signal_analyzer = SignalAnalyzer()
 
     def set_signal_path(self, signal_path: Path):
         self.signal_path = signal_path
+        if self.signal_path and self.signal_path.suffix == '.npy':
+            self.previous_window_button.setEnabled(True)
+            self.next_window_button.setEnabled(True)
+
+            self.current_window_signal_analyzer()
+        else:
+            self.previous_window_button.setEnabled(False)
+            self.next_window_button.setEnabled(False)
 
     @Slot()
     def start_signal_analyser(self):
@@ -85,3 +99,41 @@ class SignalAppWidget(QWidget):
     @Slot()
     def stop_signal_analyser(self):
         self.signal_analyzer.stop()
+
+    @Slot()
+    def current_window_signal_analyzer(self):
+        worker = Worker(
+            self.signal_analyzer.current_window,
+            signal_path=self.signal_path,
+            set_chart_axis_y=self.chart_set_axis_y,
+            update_chart=self.chart_update_data,
+        )
+        worker.signals.finished.connect(self._updated_window_signal_analyzer)
+        self.threadpool.start(worker)
+
+    @Slot()
+    def previous_window_signal_analyzer(self):
+        worker = Worker(
+            self.signal_analyzer.previous_window,
+            signal_path=self.signal_path,
+            set_chart_axis_y=self.chart_set_axis_y,
+            update_chart=self.chart_update_data,
+        )
+        worker.signals.finished.connect(self._updated_window_signal_analyzer)
+        self.threadpool.start(worker)
+
+    @Slot()
+    def next_window_signal_analyzer(self):
+        worker = Worker(
+            self.signal_analyzer.next_window,
+            signal_path=self.signal_path,
+            set_chart_axis_y=self.chart_set_axis_y,
+            update_chart=self.chart_update_data,
+        )
+        worker.signals.finished.connect(self._updated_window_signal_analyzer)
+        self.threadpool.start(worker)
+
+    @Slot()
+    def _updated_window_signal_analyzer(self):
+        self.previous_window_button.setEnabled(self.signal_analyzer.has_previous_window())
+        self.next_window_button.setEnabled(self.signal_analyzer.has_next_window())

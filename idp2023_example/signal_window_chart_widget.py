@@ -68,10 +68,19 @@ class SignalWindowChartWidget(QWidget):
         self.series.attachAxis(self.axis_y)
 
     @Slot(np.ndarray, np.ndarray)
-    def replace_array(self, x: np.ndarray, y: np.ndarray):
+    def replace_array(self, x: np.ndarray, y: np.ndarray, do_not_try_fix_what_is_not_broken: bool = False):
         start_time = time.time()
-        self.series.replaceNp(x, y)
 
+        if not do_not_try_fix_what_is_not_broken:
+            if x.base is not None or y.base is not None or x.dtype != np.float64 or y.dtype != np.float64:
+                # It looks like some condition is not being handled within replaceNp and the graph will not be updated.
+                # Make float64 copies of the provided arrays. That *seems* to work.
+                logger.debug("Trying to fix non-broken input arrays: x {} {}".format(x.base is None, x.dtype))
+                logger.debug("Trying to fix non-broken input arrays: y {} {}".format(y.base is None, y.dtype))
+                x = x if x.base is None else x.astype(np.float64).copy()
+                y = y if y.base is None else y.astype(np.float64).copy()
+
+        self.series.replaceNp(x, y)
         self.axis_x.setMin(x.min())
         self.axis_x.setMax(x.max())
         end_time = time.time()

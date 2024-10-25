@@ -26,6 +26,7 @@ class SignalAnalyzer:
         self.window_size = 600 * 50000  # Let's take 10 minutes of the signal
         self.chunk_size = 500000  # ten second at a time
         self.x = 0
+        self.max_x = 0
         self.x_array = np.zeros((self.window_size,))
         self.y_array = np.zeros_like(self.x_array) * np.nan
         self.y_max = -np.inf  # Use ridiculous values to force y-scale change
@@ -70,9 +71,51 @@ class SignalAnalyzer:
                 signal = np.memmap(self.signal_path, dtype=np.int16, order='C')
                 # Reopen the file with correct (n // 2, 2) shape.
                 signal = np.memmap(self.signal_path, dtype=np.int16, shape=(signal.shape[0] // 2, 2), order='C')
+                self.max_x = signal.shape[0]
                 # Throw out chunks of requested size
-                for chunk_start in range(0, signal.shape[0], chunk_size):
-                    yield signal[chunk_start : chunk_start + chunk_size, :]
+                for chunk_start in range(0, self.max_x, chunk_size):
+                    yield signal[chunk_start : chunk_start + chunk_size, :].astype(np.float64)
+
+    def _read_signal_at(self, start_x, end_x) -> tuple[np.ndarray, np.ndarray]:
+        logger.debug("Read signal from {} to {}".format(start_x, end_x))
+        x_array = np.linspace(start_x, end_x - 1, end_x - start_x)
+        if self.signal_path is None or not self.signal_path.is_file():
+            logger.error("Signal path '{}' is not a valid file.".format(self.signal_path))
+            return x_array, np.ones((end_x - start_x, 2)) * np.nan
+
+        match self.signal_path.suffix.lower():
+            case ".csv":
+                logger.error("This function does not support CSV-files.")
+                return x_array, np.ones((end_x - start_x, 2)) * np.nan
+
+            case ".npy":
+                # Open once to get array length.
+                # The array in the file is a flat, single-dimensional array of n elements.
+                signal = np.memmap(self.signal_path, dtype=np.int16, order='C')
+                # Reopen the file with correct (n // 2, 2) shape.
+                signal = np.memmap(self.signal_path, dtype=np.int16, shape=(signal.shape[0] // 2, 2), order='C')
+
+                # Update maximum x value
+                self.max_x = signal.shape[0]
+
+                if end_x < self.max_x:
+                    # Return a slice from the signal array.
+                    return x_array, signal[start_x:end_x, :].astype(np.float64)
+                elif start_x < self.max_x:
+                    # The signal array has less data than requested.
+                    # Return an array of requested size with all data that is still available, rest of it are NaN.
+                    y_array = np.ones((end_x - start_x, 2)) * np.nan
+                    y_array[:self.max_x - start_x] = signal[start_x:, :]
+                    return x_array, y_array
+                else:
+                    # The request is completely out of bounds
+                    # Return an array of requested size, but fill it with NaNs.
+                    return x_array, np.ones((end_x - start_x, 2)) * np.nan
+
+            case _:
+                # Ok, what did you do or didn't do to get here?
+                logger.error("Completely invalid input file?!")
+                return x_array, np.ones((end_x - start_x, 2)) * np.nan
 
     def _start(self, set_axis_y=None):
         """
@@ -99,9 +142,9 @@ class SignalAnalyzer:
         Starts the SignalAnalyzer main loop.
 
         :param signal_path: the path to the signal data file.
-        :param set_chart_axis_y: Callback function to update chart y-axis.
-        :param update_chart: Callback function to update a chart.
-        :param progress_callback: Callback function to update progress meters.
+        :param set_chart_axis_y: Signal to update chart y-axis.
+        :param update_chart: Signal to update a chart.
+        :param progress_callback: Signal to update progress meters.
         """
 
         self.signal_path = signal_path
@@ -155,3 +198,75 @@ class SignalAnalyzer:
 
             # Stop while-loop when the file ends
             self.running = False
+
+    def load_window(
+            self,
+            start_x: int,
+            end_x: int,
+            signal_path: Path,
+            set_chart_axis_y: Signal | None = None,
+            update_chart: Signal | None = None,
+            progress_callback: Signal | None = None,
+    ):
+        """Loads a signal window.
+        :param start_x: the start of the window
+        :param end_x: the end of the window
+        :param signal_path: the path to the signal data file.
+        :param set_chart_axis_y: Signal to update chart y-axis.
+        :param update_chart: Signal to update a chart.
+        :param progress_callback: Signal to update progress meters."""
+        self.signal_path = signal_path
+        if set_chart_axis_y:
+            set_chart_axis_y.emit(self.y_min, self.y_max)
+
+        self.x_array, self.y_array = self._read_signal_at(start_x, end_x)
+        self.x_array = self.x_array / 50000
+        self.y_array = self.y_array[:,1]
+
+        # Update y-axis min/max if need be:
+        self.y_min = y_min if (y_min := np.nanmin(self.y_array)) < self.y_min else self.y_min
+        self.y_max = y_max if (y_max := np.nanmax(self.y_array)) > self.y_max else self.y_max
+
+        vis_x = self.x_array[::100]
+        vis_y = self.y_array[::100]
+
+        if set_chart_axis_y:
+            set_chart_axis_y.emit(self.y_min, self.y_max)
+
+        if update_chart:
+            update_chart.emit(vis_x, vis_y)
+
+    def current_window(
+            self,
+            signal_path: Path,
+            set_chart_axis_y: Signal | None = None,
+            update_chart: Signal | None = None,
+            progress_callback: Signal | None = None,
+    ):
+        self.load_window(self.x, self.x + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback)
+
+    def previous_window(
+            self,
+            signal_path: Path,
+            set_chart_axis_y: Signal | None = None,
+            update_chart: Signal | None = None,
+            progress_callback: Signal | None = None,
+    ):
+        self.x = self.x - self.window_size if self.x > self.window_size else 0
+        self.load_window(self.x, self.x + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback)
+
+    def next_window(
+            self,
+            signal_path: Path,
+            set_chart_axis_y: Signal | None = None,
+            update_chart: Signal | None = None,
+            progress_callback: Signal | None = None,
+    ):
+        self.x = self.x + self.window_size if self.max_x > self.x + self.window_size else self.x
+        self.load_window(self.x, self.x  + self.window_size, signal_path, set_chart_axis_y, update_chart, progress_callback)
+
+    def has_previous_window(self):
+        return self.x > 0
+
+    def has_next_window(self):
+        return self.x < self.max_x - self.window_size
