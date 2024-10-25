@@ -7,12 +7,15 @@
 
 import sys
 from pathlib import Path
+import logging
 
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow
 
 from idp2023_example.signal_app_widget import SignalAppWidget
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class SignalAppMainWindow(QMainWindow):
     last_dir = Path.home()  # Keep track of the last opened directory
@@ -34,6 +37,8 @@ class SignalAppMainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.signal_app_widget.stop_signal_analyser()
+        event.accept()
+        logger.debug("Closing application.")
 
     def file_open_action(self):
         signal_path, self.selected_filter = QFileDialog.getOpenFileName(
@@ -46,6 +51,7 @@ class SignalAppMainWindow(QMainWindow):
         signal_path = Path(signal_path)  # but I like pathlib.Path
         self.last_dir = signal_path.parent
         self.signal_app_widget.set_signal_path(signal_path)
+        logger.debug("Opened file '{}'".format(signal_path))
 
 
 def run():

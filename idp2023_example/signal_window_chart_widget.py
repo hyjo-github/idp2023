@@ -7,6 +7,7 @@
 # Based on Qt for Python 6 data visualization tutorial [1]
 #
 # [1] https://doc.qt.io/qtforpython-6/tutorials/datavisualize/plot_datapoints.html
+import logging
 import time
 
 import numpy as np
@@ -15,6 +16,7 @@ from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QSizePolicy
 
+logger = logging.getLogger(__name__)
 
 class SignalWindowChartWidget(QWidget):
     def __init__(self):
@@ -73,4 +75,4 @@ class SignalWindowChartWidget(QWidget):
         self.axis_x.setMin(x.min())
         self.axis_x.setMax(x.max())
         end_time = time.time()
-        print(f"Finished updating chart in {(end_time - start_time) * 1000:.2f} ms")
+        logger.debug("Finished updating chart in {:.2f} ms".format((end_time - start_time) * 1000))

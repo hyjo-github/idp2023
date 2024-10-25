@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 import csv
+import logging
 import time
 from collections.abc import Iterator
 from pathlib import Path
@@ -9,6 +10,7 @@ from pathlib import Path
 import numpy as np
 from PySide6.QtCore import Signal
 
+logger = logging.getLogger(__name__)
 
 class SignalAnalyzer:
     """
@@ -97,9 +99,11 @@ class SignalAnalyzer:
         while self.running:
             self.x = -self.window_size
 
+            end_time = time.time()
             for chunk in self._read_signal(self.chunk_size):
                 # Record iteration start time
                 start_time = time.time()
+                logger.debug("Chunk read in {:.2f} ms".format((start_time - end_time) * 1000))
 
                 # Break out from the for-loop if `self.running` has changed
                 if not self.running:
@@ -120,6 +124,8 @@ class SignalAnalyzer:
                 vis_x = self.x_array[::100].copy()  # these array slice views seem to go missing if not copied
                 vis_y = self.y_array[::100].copy()
 
+                logger.debug("Computation done in {:.2f} ms".format((time.time() - start_time) * 1000))
+
                 # This signal will now block the thread until chart update is finished
                 if set_chart_axis_y:
                     set_chart_axis_y.emit(self.y_min, self.y_max)
@@ -134,7 +140,7 @@ class SignalAnalyzer:
                     progress_callback.emit(self.x)
 
                 end_time = time.time()
-                print(f"Finished iteration in {(end_time - start_time) * 1000:.2f} ms")
+                logger.debug("Finished iteration in {:.2f} ms".format((end_time - start_time) * 1000))
 
             # Stop while-loop when the file ends
             self.running = False
