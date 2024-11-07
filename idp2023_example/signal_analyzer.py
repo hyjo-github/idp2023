@@ -224,6 +224,8 @@ class SignalAnalyzer:
         self.x_array = self.x_array / 50000
         self.y_array = self.y_array[:, 1]
 
+        # DETECTION ALGORITHMS
+
         # Update y-axis min/max if need be:
         self.y_min = y_min if (y_min := np.nanmin(self.y_array)) < self.y_min else self.y_min
         self.y_max = y_max if (y_max := np.nanmax(self.y_array)) > self.y_max else self.y_max
@@ -236,6 +238,8 @@ class SignalAnalyzer:
 
         if update_chart:
             update_chart.emit(vis_x, vis_y)
+
+        # ADD MARKERS TO CHART
 
     def current_window(
         self,
