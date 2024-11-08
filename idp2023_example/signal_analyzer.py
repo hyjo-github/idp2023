@@ -230,6 +230,8 @@ class SignalAnalyzer:
         self.y_min = y_min if (y_min := np.nanmin(self.y_array)) < self.y_min else self.y_min
         self.y_max = y_max if (y_max := np.nanmax(self.y_array)) > self.y_max else self.y_max
 
+        logger.debug("y_min = %f, y_max = %f" % (self.y_min, self.y_max))
+
         vis_x = self.x_array[::100]
         vis_y = self.y_array[::100]
 

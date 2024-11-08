@@ -15,6 +15,7 @@ license = "MIT"
 python = ">=3.11,<3.12"
 pyside6 = "^6.5.2"
 numpy = "^1.25.2"
+matplotlib = "^3.9.2"
 
 [tool.poetry.scripts]
 signal_app = "idp2023_example.signal_app_main_window:run"
